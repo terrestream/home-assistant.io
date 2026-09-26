@@ -6,10 +6,12 @@ ha_category:
 ha_iot_class: Local Polling
 ha_release: "2026.10"
 ha_config_flow: true
+ha_zeroconf: true
 ha_codeowners:
   - '@Xynergi'
 ha_domain: terrestream_local
 ha_platforms:
+  - diagnostics
   - sensor
 ha_integration_type: device
 ha_quality_scale: bronze
@@ -30,6 +32,8 @@ The **Terrestream** {% term integration %} connects a Terrestream Indoor Air Qua
 Firmware updates are supplied by Terrestream and require internet access. Reading measurements through this integration does not require an internet connection.
 
 {% include integrations/config_flow.md %}
+
+On a network that supports multicast discovery, the sensor appears automatically in **Settings** > **Devices & services**. Select it to begin pairing. If discovery is unavailable, add **Terrestream** manually and enter its reachable local address.
 
 Enter the sensor's local address and all eight digits of the displayed code, including any leading zeros. If the code expires, open a new pairing window on the sensor.
 
@@ -58,13 +62,21 @@ The integration provides the following sensor entities:
 
 Home Assistant can convert supported measurement units for display. VOC and NOx indices are relative values, not gas concentrations. The computed particulate air quality index (AQI) uses instantaneous PM2.5 and PM10 readings with the United States Environmental Protection Agency's 2024 breakpoints. It is not a daily outdoor AQI or the sensor's optional AQHI+ display value.
 
+## Use cases
+
+- Track carbon dioxide trends in a bedroom or home office.
+- Compare particulate readings before and after running an air cleaner.
+- Display temperature, humidity, and illuminance alongside other room sensors.
+
 ## Terrestream automation examples
 
-Use these sensor entities with Home Assistant's standard [numeric state triggers](/docs/automation/trigger/#numeric-state-trigger). This integration does not provide its own triggers, conditions, or actions.
+### Automation: Notify when carbon dioxide stays above a threshold
 
-### Automation: notify when carbon dioxide stays above your chosen threshold
+Use the carbon dioxide threshold blueprint to show a Home Assistant notification when your selected reading stays above a threshold for a chosen duration. You choose the threshold; its initial value is an example, not a health limit or a recommendation to open windows regardless of outdoor conditions.
 
-Create an automation with a numeric state trigger for the sensor's **Carbon dioxide** entity. Set the upper threshold and the duration that suit your purpose, then add a notification action. This lets you receive a notification when the reading stays above that threshold for the selected duration.
+[Import the threshold notification blueprint](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fwww.home-assistant.io%2Fblueprints%2Fintegrations%2Fterrestream_local%2Fco2_notification.yaml)
+
+The waiting period starts again after Home Assistant restarts or automations are reloaded. The automation uses standard numeric-state triggers and notification actions; this integration defines no custom actions, triggers, or conditions.
 
 ## Data updates
 
@@ -94,6 +106,24 @@ Enter all eight digits of the current code, including any leading zeros. If the 
 Allow sensor warm-up, fan cleaning, or maintenance to finish. If you reload the integration during a firmware update check, leave the sensor powered on and allow up to two minutes for reconnection before troubleshooting further. Repeated reloads can delay recovery.
 
 If another Home Assistant instance is connected to the sensor, stop that instance, wait one minute, and reload this integration.
+
+### Renew pairing
+
+If Home Assistant reports that pairing is no longer valid, keep the existing integration entry. On the original sensor, open **Setup** > **Home Assistant**, disconnect the old pairing, then select **Pair**. Open the Home Assistant repair notification and enter the current address and new code. This preserves the existing entry, entities, and their settings.
+
+### Change the sensor address
+
+Home Assistant can update the address when it discovers the original sensor at its new address and verifies its saved credentials and certificate. If discovery is unavailable, open the integration entry's menu and select **Reconfigure**. Enter the original sensor's new IP address or hostname. A different sensor cannot replace the original entry through this flow.
+
+Reconfigure changes only the local address. There are no other integration options. Device settings and cloud-sharing preferences are not changed.
+
+### Settings-storage warning
+
+Let any firmware update finish, restart the sensor once, and check whether its settings persist. If the warning remains, contact support@terrestream.com. Avoid a factory reset as a first troubleshooting step. The warning clears after the sensor confirms that settings storage is working again.
+
+### Download diagnostics
+
+Open the integration entry's menu and select **Download diagnostics**. The Terrestream-specific data contains firmware version, connection status, and measurement-validity labels. It excludes sensor addresses, credentials, and measurement values. Home Assistant also includes system information and any repair issues, which can contain your integration entry name. Review the file before sharing it with support. Do not share complete Home Assistant backups or pairing codes.
 
 ## Removing the integration
 

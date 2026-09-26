@@ -1,0 +1,44 @@
+blueprint:
+  name: "Terrestream carbon dioxide notification"
+  description: >
+    Notify when carbon dioxide stays above your chosen threshold. The default
+    threshold is an example, not a health limit. The waiting period restarts
+    after Home Assistant restarts or automations are reloaded.
+  domain: automation
+  input:
+    co2_sensor:
+      name: "Carbon dioxide sensor"
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+              integration: terrestream_local
+              device_class: carbon_dioxide
+    threshold:
+      name: "Threshold"
+      default: 1000
+      selector:
+        number:
+          min: 400
+          max: 10000
+          step: 50
+          unit_of_measurement: ppm
+          mode: box
+    duration:
+      name: "Time above threshold"
+      default:
+        minutes: 10
+      selector:
+        duration: {}
+triggers:
+  - trigger: numeric_state
+    entity_id: !input co2_sensor
+    above: !input threshold
+    for: !input duration
+actions:
+  - action: persistent_notification.create
+    data:
+      title: "Carbon dioxide threshold reached"
+      message: >
+        Your selected Terrestream reading stayed above the threshold for the chosen
+        duration. Check the room's readings and conditions.
