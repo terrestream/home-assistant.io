@@ -12,12 +12,17 @@ ha_codeowners:
 ha_domain: terrestream_local
 ha_platforms:
   - diagnostics
+  - number
+  - select
   - sensor
+  - switch
+  - text
+  - time
 ha_integration_type: device
 ha_quality_scale: bronze
 ---
 
-The **Terrestream** {% term integration %} connects a Terrestream Indoor Air Quality sensor to Home Assistant over your local network. It provides air quality and room readings for dashboards and automations. No Terrestream account or MQTT broker is required.
+The **Terrestream** {% term integration %} connects a Terrestream Indoor Air Quality sensor to Home Assistant over your local network. It provides air quality and room readings for dashboards and automations, plus controls for the sensor’s display, sound, and quiet hours. No Terrestream account or MQTT broker is required.
 
 ## Supported devices
 
@@ -62,6 +67,53 @@ The integration provides the following sensor entities:
 
 Home Assistant can convert supported measurement units for display. VOC and NOx indices are relative values, not gas concentrations. The computed particulate air quality index (AQI) uses instantaneous PM2.5 and PM10 readings with the United States Environmental Protection Agency's 2024 breakpoints. It is not a daily outdoor AQI or the sensor's optional AQHI+ display value.
 
+### Device settings
+
+Go to **Settings** > **Devices & services** > **Devices**, select your Terrestream sensor, and open its **Configuration** controls. Each sensor has its own settings. Changes are saved on the sensor and do not require a Terrestream account or internet access.
+
+The integration exposes only settings advertised by your sensor. It does not change settings when you pair or reload it.
+
+#### Display and sound switches
+
+- **Dark theme**
+- **Fahrenheit display**
+- **24-hour clock**
+- **Automatic brightness**
+- **Quiet hours**
+- **Touch sounds**
+- **Notification sounds**
+
+These controls affect the physical sensor. **Fahrenheit display** does not change Home Assistant’s temperature units. Sound controls affect the sensor’s speaker, not phone notifications.
+
+#### Brightness and volume
+
+Adjust levels with sliders using the sensor’s native scales, in whole-number steps:
+
+- **Display brightness**: 10–255
+- **Ring brightness**: 0–64; 0 turns the ring off
+- **Speaker volume**: 0–10
+- **Quiet display brightness**: 1–255
+- **Quiet ring brightness**: 0–64
+- **Quiet speaker volume**: 0–10
+
+Automatic brightness and quiet hours can affect the active brightness. The sliders show saved preferences, not a measurement of current light output.
+
+#### Quiet-hours schedule and time zone
+
+Set **Quiet hours start** and **Quiet hours end** with the time controls, then enable **Quiet hours**. The times use the sensor’s **Device time zone**, which can differ from Home Assistant’s time zone. Use whole minutes, with seconds set to zero.
+
+For **Device time zone**, enter an IANA name such as `Europe/London` or `America/New_York`. The sensor must support the selected time zone.
+
+#### Display choices
+
+- **Device language**: English or French (Canada)
+- **Display air index**: EPA AQI or AQHI+
+- **VOC presentation**: VOC index, WELL, or RESET
+
+These choices affect the sensor’s display. They do not change the meaning of the Home Assistant measurement entities.
+
+You can also use these controls in automations through the standard **Turn on switch**, **Turn off switch**, **Set number value**, **Select option**, **Set time**, and **Set text value** actions. Select the setting entity belonging to the sensor you want to control.
+
 ## Use cases
 
 - Track carbon dioxide trends in a bedroom or home office.
@@ -82,13 +134,15 @@ The waiting period starts again after Home Assistant restarts or automations are
 
 Home Assistant {% term polling polls %} the sensor every five seconds. Air quality, temperature, humidity, and pressure readings expire 60 seconds after acquisition. Illuminance readings expire after 20 seconds. Network delay counts toward these limits.
 
+Settings are refreshed with each poll. After a setting change, Home Assistant immediately reads the device state back. Controls show the value reported by the sensor rather than assuming the requested value was applied. Changes made on the sensor or through Bluetooth appear after the next successful poll.
+
 Missing, warming, cleaning, invalid, or stale readings appear as unavailable. Unavailable readings are never replaced with zero. Readings missed during a connection outage are not added to the history later.
 
 ## Known limitations
 
 - Only one Home Assistant instance can maintain an active connection to a sensor at a time.
 - Device setup, Bluetooth onboarding, and firmware update checks can temporarily interrupt the local connection.
-- This integration provides measurements only. It does not expose device settings, firmware update controls, website situation recognition, or Pro intelligence.
+- This integration does not expose firmware update controls, cloud-sharing controls, website situation recognition, or Pro intelligence.
 - Pairing with Home Assistant does not change the sensor's existing cloud-sharing settings.
 
 ## Troubleshooting
@@ -116,6 +170,12 @@ If Home Assistant reports that pairing is no longer valid, keep the existing int
 Home Assistant can update the address when it discovers the original sensor at its new address and verifies its saved credentials and certificate. If discovery is unavailable, open the integration entry's menu and select **Reconfigure**. Enter the original sensor's new IP address or hostname. A different sensor cannot replace the original entry through this flow.
 
 Reconfigure changes only the local address. There are no other integration options. Device settings and cloud-sharing preferences are not changed.
+
+### A setting could not be changed
+
+If settings changed on the sensor before your request arrived, wait for the controls to refresh and try again. If the sensor is busy, allow maintenance to finish first.
+
+If a command was sent but its value could not be confirmed, wait for the sensor to reconnect and check the displayed value before retrying. A connection failure can occur after the sensor has already saved a change.
 
 ### Settings-storage warning
 
